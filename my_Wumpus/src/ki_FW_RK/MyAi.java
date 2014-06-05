@@ -109,7 +109,7 @@ public class MyAi implements WumpusAI{
 	    int total;
 	    @Override
 	    public void run(){
-	        synchronized(this){//aufräumen
+	        synchronized(this){//aufräumen1
 
         		before = System.nanoTime();
         		lastActionControll();
