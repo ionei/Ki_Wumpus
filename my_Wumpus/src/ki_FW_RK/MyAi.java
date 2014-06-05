@@ -35,6 +35,7 @@ public class MyAi implements WumpusAI{
 		zielmap.setCheckDimension(false);
 		graph.addNode(new Node(0,0));
 		graph.createMatrix();
+		
 	}
 
 	public void putWumpusWorldMap(WumpusMap map) {

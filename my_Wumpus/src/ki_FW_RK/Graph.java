@@ -51,7 +51,7 @@ public class Graph {
 		matrixNew = new int[nodes.size()] [nodes.size()];
 		for (int i = 0; i < matrix[0].length; i++) {
 			System.arraycopy(matrix[i], 0, matrixNew[i], 0, matrix[0].length);
-			int absc = nodes.get(i).getC() - nodes.get(matrix[0].length).getC();
+			int absc = nodes.get(i).getC() - nodes.get(matrix[0].length).getC();//nodes größe?
 			int absr = nodes.get(i).getR() - nodes.get(matrix[0].length).getR();
 			int abs = absc * absc + absr * absr;
 			if (abs == 1) newAddBorder(i, matrix[0].length);
