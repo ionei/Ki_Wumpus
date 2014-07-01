@@ -17,18 +17,22 @@ public class MyAi implements WumpusAI{
 	private ActionSuccess lastActionSuccess = ActionSuccess.SUCCESSFULL;
 	private PlayerState playerState = PlayerState.UNKNOWN;
 	private int a = 0;
+	private int c = 1;
 	private int x,y;
+	private WumpusMapObject temp;
 	private WumpusMapObject obj;
+	List<WumpusMapObject> tempList = new ArrayList<WumpusMapObject>();
     private Ki_Thread b = new Ki_Thread();
     private Action tue = Action.NO_ACTION, tue2= Action.NO_ACTION;
     private int i = 0;
-	private int xvor,xre,yvor,yre;
 	private AiWumpusMap zielmap = new AiWumpusMap();
 	private Graph graph = new Graph();
 	private LinkedList<Node> path = null;
+	private Node nodeOld;
 	long before;
 	long after;
 	long runningTimeNs;
+	boolean sicherheit = true;
 	
 	
 	MyAi(){
@@ -45,6 +49,7 @@ public class MyAi implements WumpusAI{
 
 	public void putLastActionSuccess(ActionSuccess actionSuccess) {
 		lastActionSuccess = actionSuccess;
+		lastActionControll();
 	}
 
 
@@ -59,11 +64,12 @@ public class MyAi implements WumpusAI{
 
 
 	public Action getAction() {
+
+    	System.out.println("getaction()");
 		// Returns no action to do nothing
 		//tue = null;
 		long newbefore = System.nanoTime();
 		b = new Ki_Thread();
-		//System.out.println("Thread start player: " + playerState);
         b.start();
 		synchronized (b) {
 			try {
@@ -95,7 +101,6 @@ public class MyAi implements WumpusAI{
 	}
 	//***************************************
 	public WumpusMapObject getWumpusObjectPlayer(){
-		
 		for(WumpusMapObject mapobj : map.getMap()){
 			if(mapobj.contains(WumpusObjects.PLAYER)){
 				obj = mapobj;
@@ -112,63 +117,72 @@ public class MyAi implements WumpusAI{
 	        synchronized(this){
 
         		before = System.nanoTime();
-        		lastActionControll();
-	        		if(path != null){
-	        			if(path.size() < 2){
-	        				path = new LinkedList<Node>();
-		        			zielerstellung();
-		        			pathFinding(getWumpusObjectPlayer(),zielauswahl());
+        		System.out.println("Bin an : " + getWumpusObjectPlayer().getRow() + " , " + getWumpusObjectPlayer().getColumn());
+        		if(path != null){
+        			if(path.size() < 1){
+        				path = new LinkedList<Node>();
+	        			zielerstellung();
+	        			tempList = zielauswahl();
+	        			if(sicherheit){
+		        			temp=findShortZiel(tempList);
+	        			}
+	        			else{
+		        			temp=logic(tempList);
+	        			}
+	        			pathFinding(getWumpusObjectPlayer(),temp);
+	        			path.remove(0);
+        			}
+        		}
+        		else{
+        			zielerstellung();
+        			tempList = zielauswahl();
+        			if(sicherheit){
+	        			temp=findShortZiel(tempList);
+        			}
+        			else{
+	        			temp=logic(tempList);
+        			}
+        			pathFinding(getWumpusObjectPlayer(),temp);
+        			path.remove(0);
+        		}
+        			
+        		if(path != null && path.size() > 0){
+	        		//lastActionControll();
+	        		
+	        		if(path.get(0).getC() + 1 == getWumpusObjectPlayer().getColumn() && path.get(0).getR() == getWumpusObjectPlayer().getRow()){
+	        			tue = Action.MOVE_LEFT;
+	        			System.out.println("links");
+	        		}
+	        		else if(path.get(0).getC() - 1 == getWumpusObjectPlayer().getColumn() && path.get(0).getR() == getWumpusObjectPlayer().getRow()){
+	        			tue = Action.MOVE_RIGHT;
+	        			System.out.println("rechts");
+	        		}
+	        		else if(path.get(0).getC() == getWumpusObjectPlayer().getColumn() && path.get(0).getR() + 1 == getWumpusObjectPlayer().getRow()){
+	        			tue = Action.MOVE_DOWN;
+	        			System.out.println("runter");
+	        		}
+	        		else if(path.get(0).getC() == getWumpusObjectPlayer().getColumn() && path.get(0).getR() - 1 == getWumpusObjectPlayer().getRow()){
+	        			tue = Action.MOVE_UP;
+	        			System.out.println("hoch");
+	        		}
+	        		else{
+	        			for(Node n: path){
+	        				System.out.println("ERROR Node zuweit weg: " + n.getC() + " , " + n.getR());
 	        			}
 	        		}
-	        		else{
-	        			zielerstellung();
-	        			pathFinding(getWumpusObjectPlayer(),zielauswahl());
-	        		}
-
-	            	after = System.nanoTime();
-	            	runningTimeNs = (after - before);
-	            	System.out.println("1. IF: " + runningTimeNs); 
-	        			
-	        		if(path != null && path.size() > 1){
-		        		//lastActionControll();
-		        		path.remove(path.size() - 1);
-		        		if(path.get(path.size() - 1).getC() + 1 == getWumpusObjectPlayer().getColumn() && path.get(path.size() - 1).getR() == getWumpusObjectPlayer().getRow()){
-		        			tue = Action.MOVE_LEFT;
-		        			System.out.println("links");
-		        		}
-		        		else if(path.get(path.size() - 1).getC() - 1 == getWumpusObjectPlayer().getColumn() && path.get(path.size() - 1).getR() == getWumpusObjectPlayer().getRow()){
-		        			tue = Action.MOVE_RIGHT;
-		        			System.out.println("rechts");
-		        		}
-		        		else if(path.get(path.size() - 1).getC() == getWumpusObjectPlayer().getColumn() && path.get(path.size() - 1).getR() + 1 == getWumpusObjectPlayer().getRow()){
-		        			tue = Action.MOVE_DOWN;
-		        			System.out.println("runter");
-		        		}
-		        		else if(path.get(path.size() - 1).getC() == getWumpusObjectPlayer().getColumn() && path.get(path.size() - 1).getR() - 1 == getWumpusObjectPlayer().getRow()){
-		        			tue = Action.MOVE_UP;
-		        			System.out.println("hoch");
-		        		}
-		        		else{
-		        			for(Node n: path){
-		        				System.out.println("ERROR Node zuweit weg: " + n.getC() + " , " + n.getR());
-		        			}
-		        		}
-		            	System.out.println("if"); 
-		        		
-	        		}
-	        		else{
-		        		//System.out.println("Keine Route");
-		        		//lastActionControll();
-		        		zielerstellung();
-		        		pathFinding(getWumpusObjectPlayer(),zielauswahl());
-		        		tue = Action.NO_ACTION;
-		            	System.out.println("else"); 
-	        		}
-
-	            	after = System.nanoTime();
-	            	runningTimeNs = (after - before);
-	            	System.out.println("Thread: " + runningTimeNs); 
 	        		notify();
+	        		nodeOld = path.get(0);
+	        		path.remove(0);
+        		}
+        		else{
+	        		System.out.println("Keine Route");
+	        		tue = Action.NO_ACTION;
+        		}
+
+            	after = System.nanoTime();
+            	runningTimeNs = (after - before);
+            	System.out.println("Thread: " + runningTimeNs); 
+        		notify();
 	        	
 	        	
 	        }
@@ -237,8 +251,11 @@ public class MyAi implements WumpusAI{
 			}
 			cleanMap();
 		}
-		if(lastActionSuccess==ActionSuccess.TIMEOUT){
+		else if(lastActionSuccess == ActionSuccess.TIMEOUT){
 			System.out.println("TIME OUT -----------------------------------------------");
+		}
+		else {
+			System.out.println("Letzte Aktion " + lastActionSuccess);
 		}
 	}
 	private void zielerstellung(){
@@ -258,7 +275,6 @@ public class MyAi implements WumpusAI{
 		if(getWumpusObjectPlayer().contains(WumpusObjects.TWINKLE)){
 			potentialobjects.add(WumpusObjects.GOLD);
 		}
-
 		if( !AiWumpusMapObject.hitUpperWall || AiWumpusMapObject.hitUpperWall && AiWumpusMapObject.upperWallPosition > r+1){
 			if(zielmap.getWumpusMapObject(r+1, c) != null){
 				AiWumpusMapObject.setObjectsList( zielmap.getWumpusMapObject(r+1, c), potentialobjects );
@@ -295,18 +311,126 @@ public class MyAi implements WumpusAI{
 			}
 		}
 	}
-	private WumpusMapObject zielauswahl(){
+	private List<WumpusMapObject> zielauswahl(){
 		List<WumpusMapObject> newZielList = new ArrayList<WumpusMapObject>();
-		
+		List<WumpusMapObject> risikoZielList = new ArrayList<WumpusMapObject>();
+
+		System.out.println(zielmap.getMap().toString());
 		for(WumpusMapObject openObject : zielmap.getMap()){
 			if(openObject.getObjectsList().isEmpty()){
 				newZielList.add(openObject);
 			}
+			else if(openObject.getObjectsList().contains(WumpusObjects.GOLD)){
+				if(openObject.getObjectsList().size() == 1)
+					newZielList.add(openObject);
+			}
+			else if(!openObject.getObjectsList().contains(WumpusObjects.PLAYER)){
+					risikoZielList.add(openObject);
+			}
 			//rest ziele noch wählen
 			
 		}
-		return findShortZiel(newZielList);
+		System.out.println(newZielList.toString());
+		System.out.println(risikoZielList.toString());
+		if(newZielList.size() > 0){
+			sicherheit = true;
+			return newZielList;
+		}
+		else {
+			sicherheit = false;
+			return risikoZielList;
+		}
+			
 	}
+
+	private WumpusMapObject logic(List<WumpusMapObject> risikoZielList) {  //Wände? logic überdenken
+		List<objectContainer> risikoList = new ArrayList<objectContainer>();
+		WumpusMapObject ziel = null;
+		int wumpusRisiko;
+		int trapRisiko;
+		int row;
+		int column;
+		for(WumpusMapObject openObject : risikoZielList){
+			wumpusRisiko = 0;
+			trapRisiko = 0;
+			row = openObject.getRow();
+			column = openObject.getColumn();
+				// oben kontrolle
+			if(map.getWumpusMapObject(row + 1, column) != null){
+				if(map.getWumpusMapObject(row + 1, column).contains(WumpusObjects.BREEZE)){
+					trapRisiko+=10;	
+				}
+				if(map.getWumpusMapObject(row + 1, column).contains(WumpusObjects.STENCH)){
+					wumpusRisiko+=10;
+				}
+			}
+			else if(row + 1 == AiWumpusMapObject.upperWallPosition && AiWumpusMapObject.hitUpperWall){
+				if(openObject.contains(WumpusObjects.TRAP))
+					trapRisiko++;
+				if(openObject.contains(WumpusObjects.WUMPUS))
+					wumpusRisiko++;
+			}
+				//unten kontrolle
+			if(map.getWumpusMapObject(row - 1, column) != null){
+				if(map.getWumpusMapObject(row - 1, column).contains(WumpusObjects.BREEZE)){
+					trapRisiko+=10;	
+				}
+				if(map.getWumpusMapObject(row - 1, column).contains(WumpusObjects.STENCH)){
+					wumpusRisiko+=10;
+				}
+			}
+			else if(row - 1 == AiWumpusMapObject.lowerWallPosition && AiWumpusMapObject.hitLowerWall){
+				if(openObject.contains(WumpusObjects.TRAP))
+					trapRisiko++;
+				if(openObject.contains(WumpusObjects.WUMPUS))
+					wumpusRisiko++;
+			}
+			// rechts kontrolle
+			if(map.getWumpusMapObject(row , column + 1) != null){
+				if(map.getWumpusMapObject(row , column + 1).contains(WumpusObjects.BREEZE)){
+					trapRisiko+=10;	
+				}
+				if(map.getWumpusMapObject(row , column + 1).contains(WumpusObjects.STENCH)){
+					wumpusRisiko+=10;
+				}
+			}
+			else if(column + 1 == AiWumpusMapObject.rightWallPosition && AiWumpusMapObject.hitRightWall){
+				if(openObject.contains(WumpusObjects.TRAP))
+					trapRisiko++;
+				if(openObject.contains(WumpusObjects.WUMPUS))
+					wumpusRisiko++;
+			}
+			//links kontrolle
+			if(map.getWumpusMapObject(row , column - 1) != null){
+				if(map.getWumpusMapObject(row , column - 1).contains(WumpusObjects.BREEZE)){
+					trapRisiko+=10;	
+				}
+				if(map.getWumpusMapObject(row , column - 1).contains(WumpusObjects.STENCH)){
+					wumpusRisiko+=10;
+				}
+			}
+			else if(column - 1 == AiWumpusMapObject.leftWallPosition && AiWumpusMapObject.hitLeftWall){
+				if(openObject.contains(WumpusObjects.TRAP))
+					trapRisiko++;
+				if(openObject.contains(WumpusObjects.WUMPUS))
+					wumpusRisiko++;
+			}
+			
+			risikoList.add(new objectContainer(trapRisiko, openObject));
+			
+		}
+		int min = 100;
+		System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!test!!!!!!!!!!!!!!!");
+		for(objectContainer temp: risikoList){
+			if(temp.getRisiko()<min){
+				min = temp.getRisiko();
+				ziel = temp.getObject();
+				System.out.println("mögliches Ziel : " + ziel.getRow() + " , " + ziel.getColumn() + "  Risiko : " + temp.getRisiko());
+			}
+		}
+		return ziel;
+	}
+
 	private WumpusMapObject findShortZiel(List<WumpusMapObject> ziele){
 		WumpusMapObject zielObject = null;
 		int prio=4;
@@ -344,7 +468,8 @@ public class MyAi implements WumpusAI{
 		distanceColumn = (zielObject.getColumn() - getWumpusObjectPlayer().getColumn());
 		distanceRow = (zielObject.getRow() - getWumpusObjectPlayer().getRow());
 		
-		distance = (int) Math.sqrt(distanceColumn * distanceColumn) + (int) Math.sqrt(distanceRow * distanceRow);
+		//distance = (int) Math.sqrt(distanceColumn * distanceColumn) + (int) Math.sqrt(distanceRow * distanceRow);
+		distance = (int) Math.sqrt(distanceColumn * distanceColumn*10 + distanceRow * distanceRow*10);
 		
 		return distance;
 	}
@@ -371,14 +496,21 @@ public class MyAi implements WumpusAI{
 	private void pathFinding(WumpusMapObject player, WumpusMapObject ziel){
     	before = System.nanoTime();
 		//System.out.println("graph" + map.toString());
-		if(graph.getNode(ziel.getColumn(), ziel.getRow())==null){
+		System.out.println("ZIEL: " + ziel.getRow() + " , " + ziel.getColumn()  + " sicherheit "+ sicherheit);
+		if(graph.getNode(ziel.getColumn(), ziel.getRow()) == null){
 			graph.addNode(new Node(ziel));
-		}
+			c++;
+		//}
 		//System.out.println("Matrix erstellung");
-		graph.feetMatrix();
-		//graph.createMatrix();
+			a++;
+			System.out.println("bin hier zum " + a + " ten mal und habe " + c + " Knoten erstellt und besitze "+ graph.getNodes().size() + " Konten");
+			graph.feetMatrix();
+			//graph.createMatrix();
+		}
+		else
+			System.out.println("                         !!!!!!!!!!!!!!!!!!!!!! war am ziel schonmal ");
 		//System.out.println("path erstellung");
-		path = graph.aStar(graph.getNodeID(player.getColumn(), player.getRow()), graph.getNodeID(ziel.getColumn(), ziel.getRow()));
+		path = graph.aStar(graph.getNodeID(ziel.getColumn(), ziel.getRow()),graph.getNodeID(player.getColumn(), player.getRow()));
     	after = System.nanoTime();
     	runningTimeNs = (after - before);
     	System.out.println("path: " + runningTimeNs); 
