@@ -25,6 +25,7 @@ public class MyAi implements WumpusAI{
     private Ki_Thread b = new Ki_Thread();
     private Action tue = Action.NO_ACTION, tue2= Action.NO_ACTION;
     private int i = 0;
+    private int j = 0;
 	private AiWumpusMap zielmap = new AiWumpusMap();
 	private Graph graph = new Graph();
 	private LinkedList<Node> path = null;
@@ -33,6 +34,7 @@ public class MyAi implements WumpusAI{
 	long after;
 	long runningTimeNs;
 	boolean sicherheit = true;
+	boolean wumpusKnow = false;
 	
 	
 	MyAi(){
@@ -122,6 +124,29 @@ public class MyAi implements WumpusAI{
         			if(path.size() < 1){
         				path = new LinkedList<Node>();
 	        			zielerstellung();
+	        			if(wumpusKnow){
+	        				System.out.println("wumpus umrennen ");
+	        				List<WumpusObjects> potentialobjects = new ArrayList<WumpusObjects>();	
+	    					if(zielmap.getWumpusMapObject(nodeOld.getR()+1, nodeOld.getC()) != null){
+	    						if(!zielmap.getWumpusMapObject(nodeOld.getR()+1, nodeOld.getC()).contains(WumpusObjects.WUMPUS)&&!zielmap.getWumpusMapObject(nodeOld.getR()+1, nodeOld.getC()).contains(WumpusObjects.TRAP))
+	    							zielmap.setWumpusMapObject(AiWumpusMapObject.createWumpusMapObject(nodeOld.getR()+1, nodeOld.getC(), potentialobjects));
+	    					}
+	    					if(zielmap.getWumpusMapObject(nodeOld.getR()-1, nodeOld.getC()) != null){
+	    						if(!zielmap.getWumpusMapObject(nodeOld.getR()-1, nodeOld.getC()).contains(WumpusObjects.WUMPUS)&&!zielmap.getWumpusMapObject(nodeOld.getR()-1, nodeOld.getC()).contains(WumpusObjects.TRAP))
+	    							zielmap.setWumpusMapObject(AiWumpusMapObject.createWumpusMapObject(nodeOld.getR()-1, nodeOld.getC(), potentialobjects));
+	    					}
+	    					if(zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()+1) != null){
+	    						if(!zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()+1).contains(WumpusObjects.WUMPUS)&&!zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()+1).contains(WumpusObjects.TRAP))
+	    							zielmap.setWumpusMapObject(AiWumpusMapObject.createWumpusMapObject(nodeOld.getR(), nodeOld.getC()+1, potentialobjects));
+	    					}
+	    					if(zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()-1) != null){
+	    						if(!zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()-1).contains(WumpusObjects.WUMPUS)&&!zielmap.getWumpusMapObject(nodeOld.getR(), nodeOld.getC()-1).contains(WumpusObjects.TRAP))
+	    							zielmap.setWumpusMapObject(AiWumpusMapObject.createWumpusMapObject(nodeOld.getR(), nodeOld.getC()-1, potentialobjects));
+	    					}
+	    					potentialobjects.add(WumpusObjects.WUMPUS);
+	    					zielmap.setWumpusMapObject(AiWumpusMapObject.createWumpusMapObject(nodeOld.getR(), nodeOld.getC(), potentialobjects));
+	    					wumpusKnow = false;
+	        			}
 	        			tempList = zielauswahl();
 	        			if(sicherheit){
 		        			temp=findShortZiel(tempList);
@@ -137,11 +162,17 @@ public class MyAi implements WumpusAI{
         			zielerstellung();
         			tempList = zielauswahl();
         			if(sicherheit){
+        				System.out.println("Sicher ");
+        				j = 0;
 	        			temp=findShortZiel(tempList);
         			}
-        			else{
+        			else if (!wumpusKnow){
+        				System.out.println("nicht Sicher ");
+        				j = 0;
 	        			temp=logic(tempList);
         			}
+        			
+        				
         			pathFinding(getWumpusObjectPlayer(),temp);
         			path.remove(0);
         		}
@@ -150,20 +181,44 @@ public class MyAi implements WumpusAI{
 	        		//lastActionControll();
 	        		
 	        		if(path.get(0).getC() + 1 == getWumpusObjectPlayer().getColumn() && path.get(0).getR() == getWumpusObjectPlayer().getRow()){
-	        			tue = Action.MOVE_LEFT;
-	        			System.out.println("links");
+	        			if(wumpusKnow && path.size() == 1){
+		        			tue = Action.SHOOT_LEFT;
+		        			System.out.println("shoot links");
+	        			}
+	        			else{
+		        			tue = Action.MOVE_LEFT;
+		        			System.out.println("links");
+	        			}
 	        		}
 	        		else if(path.get(0).getC() - 1 == getWumpusObjectPlayer().getColumn() && path.get(0).getR() == getWumpusObjectPlayer().getRow()){
-	        			tue = Action.MOVE_RIGHT;
-	        			System.out.println("rechts");
+	        			if(wumpusKnow && path.size() == 1){
+		        			tue = Action.SHOOT_RIGHT;
+		        			System.out.println("shoot rechts");
+	        			}
+	        			else{
+		        			tue = Action.MOVE_RIGHT;
+		        			System.out.println("rechts");
+	        			}
 	        		}
 	        		else if(path.get(0).getC() == getWumpusObjectPlayer().getColumn() && path.get(0).getR() + 1 == getWumpusObjectPlayer().getRow()){
-	        			tue = Action.MOVE_DOWN;
-	        			System.out.println("runter");
+	        			if(wumpusKnow && path.size() == 1){
+		        			tue = Action.SHOOT_DOWN;
+		        			System.out.println("shoot runter");
+	        			}
+	        			else{
+		        			tue = Action.MOVE_DOWN;
+		        			System.out.println("runter");
+	        			}
 	        		}
 	        		else if(path.get(0).getC() == getWumpusObjectPlayer().getColumn() && path.get(0).getR() - 1 == getWumpusObjectPlayer().getRow()){
-	        			tue = Action.MOVE_UP;
-	        			System.out.println("hoch");
+	        			if(wumpusKnow && path.size() == 1){
+		        			tue = Action.SHOOT_UP;
+		        			System.out.println("shoot hoch");
+	        			}
+	        			else{
+		        			tue = Action.MOVE_UP;
+		        			System.out.println("hoch");
+	        			}
 	        		}
 	        		else{
 	        			for(Node n: path){
@@ -346,6 +401,7 @@ public class MyAi implements WumpusAI{
 	private WumpusMapObject logic(List<WumpusMapObject> risikoZielList) {  //Wände? logic überdenken
 		List<objectContainer> risikoList = new ArrayList<objectContainer>();
 		WumpusMapObject ziel = null;
+		WumpusMapObject wumpusZiel = null;
 		int wumpusRisiko;
 		int trapRisiko;
 		int row;
@@ -416,17 +472,26 @@ public class MyAi implements WumpusAI{
 					wumpusRisiko++;
 			}
 			
-			risikoList.add(new objectContainer(trapRisiko, openObject));
+			risikoList.add(new objectContainer(trapRisiko, wumpusRisiko, openObject));
 			
 		}
 		int min = 100;
-		System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!test!!!!!!!!!!!!!!!");
+		int max = 0;
 		for(objectContainer temp: risikoList){
 			if(temp.getRisiko()<min){
 				min = temp.getRisiko();
 				ziel = temp.getObject();
-				System.out.println("mögliches Ziel : " + ziel.getRow() + " , " + ziel.getColumn() + "  Risiko : " + temp.getRisiko());
+				//System.out.println("mögliches Ziel : " + ziel.getRow() + " , " + ziel.getColumn() + "  Risiko : " + temp.getRisiko());
 			}
+			if(temp.getWumpusRisiko()>max){
+				max = temp.getWumpusRisiko();
+				wumpusZiel = temp.getObject();
+				//System.out.println("mögliches Ziel : " + ziel.getRow() + " , " + ziel.getColumn() + "  Risiko : " + temp.getRisiko());
+			}
+		}
+		if(max == 40 || max == 31 || max == 22 || max == 30 || max == 21 || max == 12 ){
+			wumpusKnow = true;
+			return wumpusZiel;
 		}
 		return ziel;
 	}
